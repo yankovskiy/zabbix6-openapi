@@ -1,0 +1,1 @@
+Обнови CLAUDE.md, README.md, добавь информацию о новом методе в index.html

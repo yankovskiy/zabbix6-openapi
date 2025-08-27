@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - trigger.get
+  version: 6.0.0
+  description: |
+    The trigger.get method allows you to retrieve triggers according to the given parameters.
+    
+    This method is available to users of any type. Permissions to return results can be revoked in user role settings.
+    For more information, see User roles.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/trigger/get
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+paths:
+  /:
+    post:
+      summary: Retrieve triggers
+      description: Retrieve triggers according to the given parameters
+      operationId: triggerGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerGetRequest'
+            examples:
+              basic_example:
+                summary: Basic trigger retrieval
+                value:
+                  jsonrpc: "2.0"
+                  method: "trigger.get"
+                  params:
+                    output: ["triggerid", "description", "priority"]
+                    filter:
+                      value: 1
+                    sortfield: "priority"
+                    sortorder: "DESC"
+                  auth: "your-auth-token"
+                  id: 1
+              with_hosts:
+                summary: Get triggers with host information
+                value:
+                  jsonrpc: "2.0"
+                  method: "trigger.get"
+                  params:
+                    output: "extend"
+                    selectHosts: ["hostid", "name"]
+                    hostids: ["10084"]
+                    monitored: true
+                  auth: "your-auth-token"
+                  id: 2
+              filtered_by_severity:
+                summary: Get triggers filtered by minimum severity
+                value:
+                  jsonrpc: "2.0"
+                  method: "trigger.get"
+                  params:
+                    output: ["triggerid", "description", "priority", "status"]
+                    min_severity: 3
+                    active: true
+                    sortfield: "lastchange"
+                    limit: 10
+                  auth: "your-auth-token"
+                  id: 3
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerGetResponse'
+              examples:
+                success_example:
+                  summary: Successful trigger retrieval
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - triggerid: "17367"
+                        description: "Free disk space is less than 20% on volume {#FSNAME}"
+                        expression: "{Template OS Linux by Zabbix agent:vfs.fs.size[{#FSNAME},pused].last()}>80"
+                        priority: "2"
+                        status: "0"
+                        value: "0"
+                        lastchange: "1634567890"
+                        comments: ""
+                        url: ""
+                        flags: "0"
+                        templateid: "10001"
+                        type: "0"
+                        state: "0"
+                        error: ""
+                        correlation_mode: "0"
+                        correlation_tag: ""
+                        manual_close: "0"
+                        opdata: ""
+                        recovery_mode: "0"
+                        recovery_expression: ""
+                      - triggerid: "17368"
+                        description: "High CPU utilization"
+                        expression: "{Template OS Linux by Zabbix agent:system.cpu.util[,idle].avg(5m)}<20"
+                        priority: "3"
+                        status: "0"
+                        value: "1"
+                        lastchange: "1634567920"
+                        comments: "Warning if CPU utilization is over 80%"
+                        url: ""
+                        flags: "0"
+                        templateid: "10002"
+                        type: "0"
+                        state: "0"
+                        error: ""
+                        correlation_mode: "0"
+                        correlation_tag: ""
+                        manual_close: "0"
+                        opdata: ""
+                        recovery_mode: "0"
+                        recovery_expression: ""
+                    id: 1
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/triggerids\": a string is expected."
+                    id: 1
+components:
+  schemas:
+    TriggerGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC protocol version
+        method:
+          type: string
+          enum: ["trigger.get"]
+          description: API method name
+        params:
+          type: object
+          properties:
+            # Filtering parameters
+            triggerids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only triggers with the given IDs
+            groupids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only triggers that belong to hosts from the given host groups
+            templateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only triggers that belong to the given templates
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only triggers that belong to the given hosts
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only triggers that contain the given items
+            functions:
+              type: array
+              items:
+                type: string
+              description: Return only triggers that use the given functions
+            group:
+              type: string
+              description: Return only triggers that belong to hosts from the host group with the given name
+            host:
+              type: string
+              description: Return only triggers that belong to host with the given name
+            inherited:
+              type: boolean
+              description: If set to true return only triggers inherited from a template
+            templated:
+              type: boolean
+              description: If set to true return only triggers that belong to templates
+            dependent:
+              type: boolean
+              description: If set to true return only triggers with dependencies
+            monitored:
+              type: boolean
+              description: If set to true return only enabled triggers that belong to monitored hosts and contain only enabled items
+            active:
+              type: boolean
+              description: If set to true return only enabled triggers that belong to monitored hosts
+            maintenance:
+              type: boolean
+              description: If set to true return only enabled triggers that belong to hosts in maintenance
+            withUnacknowledgedEvents:
+              type: boolean
+              description: If set to true return only triggers that have unacknowledged events
+            withAcknowledgedEvents:
+              type: boolean
+              description: If set to true return only triggers with acknowledged events
+            withLastEventUnacknowledged:
+              type: boolean
+              description: If set to true return only triggers with last event unacknowledged
+            skipDependent:
+              type: boolean
+              description: If set to true skip triggers in a problem state that are dependent on other triggers
+            lastChangeSince:
+              type: integer
+              description: Return only triggers that have changed after the given time
+            lastChangeTill:
+              type: integer
+              description: Return only triggers that have changed before the given time
+            only_true:
+              type: boolean
+              description: If set to true return only triggers that have recently been in a problem state
+            min_severity:
+              type: integer
+              minimum: 0
+              maximum: 5
+              description: Return only triggers with severity greater or equal than the given severity
+            evaltype:
+              type: integer
+              enum: [0, 2]
+              description: Rules for tag searching (0 - AND/OR, 2 - OR)
+            tags:
+              type: array
+              items:
+                type: object
+                properties:
+                  tag:
+                    type: string
+                  value:
+                    type: string
+                  operator:
+                    type: integer
+                    enum: [0, 1, 2, 3, 4, 5]
+              description: Return only triggers with given tags
+            expandComment:
+              type: boolean
+              description: If set to true return comments with expanded macros
+            expandDescription:
+              type: boolean
+              description: If set to true return description with expanded macros
+            expandExpression:
+              type: boolean
+              description: If set to true return expression with expanded functions and macros
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            searchByAny:
+              type: boolean
+              description: If set to true use 'OR' for search conditions instead of 'AND'
+            startSearch:
+              type: boolean
+              description: Search triggers by the beginning of the phrase in the search parameter
+            excludeSearch:
+              type: boolean
+              description: Exclude from the result triggers that match the search parameter
+            searchWildcardsEnabled:
+              type: boolean
+              description: If set to true enable the use of wildcards in search parameters
+            # Output parameters
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+                    enum:
+                      - "triggerid"
+                      - "description"
+                      - "expression"
+                      - "priority"
+                      - "status"
+                      - "value"
+                      - "lastchange"
+                      - "comments"
+                      - "url"
+                      - "flags"
+                      - "templateid"
+                      - "type"
+                      - "state"
+                      - "error"
+                      - "correlation_mode"
+                      - "correlation_tag"
+                      - "manual_close"
+                      - "opdata"
+                      - "recovery_mode"
+                      - "recovery_expression"
+              description: Object properties to be returned
+            selectGroups:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return host groups that the trigger belongs to
+            selectHosts:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return hosts that the trigger belongs to
+            selectItems:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return items contained by the trigger
+            selectFunctions:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return functions used in the trigger
+            selectDependencies:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return triggers that the trigger depends on
+            selectDiscoveryRule:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the low-level discovery rule that created the trigger
+            selectLastEvent:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the last significant event generated by the trigger
+            selectTags:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return trigger tags
+            selectTriggerDiscovery:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return trigger discovery data
+            # Sorting and limiting parameters
+            sortfield:
+              type: array
+              items:
+                type: string
+                enum:
+                  - "triggerid"
+                  - "description"
+                  - "status"
+                  - "priority"
+                  - "lastchange"
+                  - "hostname"
+              description: Sort the result by the given properties
+            sortorder:
+              type: array
+              items:
+                type: string
+                enum: ["ASC", "DESC"]
+              description: Sort order
+            limit:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            preservekeys:
+              type: boolean
+              description: Use IDs as keys in the resulting array
+        id:
+          type: integer
+          description: Request ID
+        auth:
+          type: string
+          description: Authentication token
+    TriggerGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC protocol version
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Trigger'
+            - type: integer
+              description: Number of results (when countOutput is true)
+        id:
+          type: integer
+          description: Request ID
+    Trigger:
+      type: object
+      properties:
+        triggerid:
+          type: string
+          description: ID of the trigger
+        description:
+          type: string
+          description: Name of the trigger
+        expression:
+          type: string
+          description: Reduced trigger expression
+        priority:
+          type: string
+          enum: ["0", "1", "2", "3", "4", "5"]
+          description: Severity of the trigger (0-Not classified, 1-Information, 2-Warning, 3-Average, 4-High, 5-Disaster)
+        status:
+          type: string
+          enum: ["0", "1"]
+          description: Status of the trigger (0-enabled, 1-disabled)
+        value:
+          type: string
+          enum: ["0", "1"]
+          description: Value of the trigger (0-OK, 1-PROBLEM)
+        lastchange:
+          type: string
+          description: Time when the trigger last changed its status
+        comments:
+          type: string
+          description: Additional comments to the trigger
+        url:
+          type: string
+          description: URL associated with the trigger
+        flags:
+          type: string
+          enum: ["0", "4"]
+          description: Origin of the trigger (0-plain trigger, 4-discovered trigger)
+        templateid:
+          type: string
+          description: ID of the parent template trigger
+        type:
+          type: string
+          enum: ["0", "1"]
+          description: Type of the trigger (0-do not generate multiple PROBLEM events, 1-generate multiple PROBLEM events)
+        state:
+          type: string
+          enum: ["0", "1"]
+          description: State of the trigger (0-normal, 1-unknown)
+        error:
+          type: string
+          description: Error text if there have been any problems when updating the trigger
+        correlation_mode:
+          type: string
+          enum: ["0", "1"]
+          description: Problem-event correlation mode (0-disabled, 1-tag value)
+        correlation_tag:
+          type: string
+          description: Tag for problem-event correlation
+        manual_close:
+          type: string
+          enum: ["0", "1"]
+          description: Manual close mode (0-disabled, 1-enabled)
+        opdata:
+          type: string
+          description: Operational data
+        recovery_mode:
+          type: string
+          enum: ["0", "1", "2"]
+          description: Recovery mode (0-expression, 1-recovery expression, 2-none)
+        recovery_expression:
+          type: string
+          description: Recovery expression
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostGroup'
+          description: Host groups that the trigger belongs to (only if selectGroups is used)
+        hosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Host'
+          description: Hosts that the trigger belongs to (only if selectHosts is used)
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: Items contained by the trigger (only if selectItems is used)
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TriggerFunction'
+          description: Functions used in the trigger (only if selectFunctions is used)
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+          description: Triggers that this trigger depends on (only if selectDependencies is used)
+        discoveryRule:
+          $ref: '#/components/schemas/DiscoveryRule'
+          description: Low-level discovery rule that created the trigger (only if selectDiscoveryRule is used)
+        lastEvent:
+          $ref: '#/components/schemas/Event'
+          description: Last significant event generated by the trigger (only if selectLastEvent is used)
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Trigger tags (only if selectTags is used)
+        triggerDiscovery:
+          $ref: '#/components/schemas/TriggerDiscovery'
+          description: Trigger discovery data (only if selectTriggerDiscovery is used)
+    HostGroup:
+      type: object
+      properties:
+        groupid:
+          type: string
+          description: ID of the host group
+        name:
+          type: string
+          description: Name of the host group
+    Host:
+      type: object
+      properties:
+        hostid:
+          type: string
+          description: ID of the host
+        name:
+          type: string
+          description: Name of the host
+        host:
+          type: string
+          description: Technical name of the host
+    Item:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the item
+        name:
+          type: string
+          description: Name of the item
+        key_:
+          type: string
+          description: Item key
+    TriggerFunction:
+      type: object
+      properties:
+        functionid:
+          type: string
+          description: ID of the function
+        itemid:
+          type: string
+          description: ID of the item used in the function
+        function:
+          type: string
+          description: Name of the function
+        parameter:
+          type: string
+          description: Function parameter
+    DiscoveryRule:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the discovery rule
+        name:
+          type: string
+          description: Name of the discovery rule
+    Event:
+      type: object
+      properties:
+        eventid:
+          type: string
+          description: ID of the event
+        source:
+          type: string
+          description: Type of the event
+        object:
+          type: string
+          description: Type of object that is related to the event
+        objectid:
+          type: string
+          description: ID of the related object
+    Tag:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: Tag name
+        value:
+          type: string
+          description: Tag value
+    TriggerDiscovery:
+      type: object
+      properties:
+        triggerid:
+          type: string
+          description: ID of the trigger prototype
+        parent_triggerid:
+          type: string
+          description: ID of the trigger prototype from which the trigger has been created
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC protocol version
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
+          description: Request ID
