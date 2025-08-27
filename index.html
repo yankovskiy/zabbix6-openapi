@@ -116,6 +116,12 @@
                 <p>Получение информации о хостах из Zabbix</p>
                 <button class="load-api-btn" onclick="loadAPI('host/host.get.yaml')">Загрузить API документацию</button>
             </div>
+
+            <div class="api-card">
+                <h3>item.get</h3>
+                <p>Получение информации об элементах данных из Zabbix</p>
+                <button class="load-api-btn" onclick="loadAPI('item/item.get.yaml')">Загрузить API документацию</button>
+            </div>
             
             <!-- Placeholder for future API methods -->
             <div class="api-card">
@@ -141,11 +147,19 @@
 
     <script>
         function loadAPI(specPath) {
-            // Clear the container
+            // Get the container and completely recreate it to avoid Redoc conflicts
             const container = document.getElementById('redoc-container');
-            container.innerHTML = '<div style="text-align: center; padding: 20px;">Загрузка...</div>';
+            const parent = container.parentNode;
             
-            // Check if spec file exists and load it
+            // Remove the old container
+            parent.removeChild(container);
+            
+            // Create a new container
+            const newContainer = document.createElement('div');
+            newContainer.id = 'redoc-container';
+            newContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Загрузка...</div>';
+            parent.appendChild(newContainer);
+            
             // Initialize Redoc with the spec URL directly
             Redoc.init(specPath, {
                 scrollYOffset: 60,
@@ -156,10 +170,10 @@
                         }
                     }
                 }
-            }, container)
+            }, newContainer)
                 .catch(error => {
                     console.error('Error loading API spec:', error);
-                    container.innerHTML = `
+                    newContainer.innerHTML = `
                         <div style="text-align: center; padding: 40px; color: #e53e3e;">
                             <h3>Ошибка загрузки</h3>
                             <p>Не удалось загрузить спецификацию: ${specPath}</p>

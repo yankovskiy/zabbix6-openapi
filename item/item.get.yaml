@@ -1,0 +1,619 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - item.get
+  version: 6.0.0
+  description: |
+    Retrieves items according to the given parameters.
+    
+    This method allows you to retrieve items from Zabbix hosts, templates, and prototypes
+    with flexible filtering and output options. Available to users of any type.
+    Permissions to call the method can be revoked in user role settings.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/item/get
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+paths:
+  /:
+    post:
+      summary: Retrieve items
+      description: Returns items according to the given parameters
+      operationId: itemGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemGetRequest'
+            examples:
+              basic_retrieval:
+                summary: Basic item retrieval
+                value:
+                  jsonrpc: "2.0"
+                  method: "item.get"
+                  params:
+                    output: "extend"
+                    hostids: ["10084"]
+                  id: 1
+                  auth: "auth_token"
+              search_by_key:
+                summary: Search items by key pattern
+                value:
+                  jsonrpc: "2.0"
+                  method: "item.get"
+                  params:
+                    output: ["itemid", "name", "key_", "status"]
+                    hostids: ["10084"]
+                    search:
+                      key_: "system.cpu"
+                  id: 1
+                  auth: "auth_token"
+              with_triggers:
+                summary: Retrieve items with associated triggers
+                value:
+                  jsonrpc: "2.0"
+                  method: "item.get"
+                  params:
+                    output: "extend"
+                    selectTriggers: "extend"
+                    hostids: ["10084"]
+                  id: 1
+                  auth: "auth_token"
+              filtered_by_tags:
+                summary: Filter items by tags
+                value:
+                  jsonrpc: "2.0"
+                  method: "item.get"
+                  params:
+                    output: ["itemid", "name", "key_"]
+                    tags:
+                      - tag: "component"
+                        value: "cpu"
+                        operator: 1
+                  id: 1
+                  auth: "auth_token"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemGetResponse'
+              examples:
+                items_result:
+                  summary: Items retrieval result
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - itemid: "23298"
+                        type: "0"
+                        snmp_community: ""
+                        snmp_oid: ""
+                        hostid: "10084"
+                        name: "Agent ping"
+                        key_: "agent.ping"
+                        delay: "1m"
+                        history: "7d"
+                        trends: "365d"
+                        status: "0"
+                        value_type: "3"
+                        trapper_hosts: ""
+                        units: ""
+                        error: ""
+                        evaltype: "0"
+                        params: ""
+                        ipmi_sensor: ""
+                        authtype: "0"
+                        username: ""
+                        password: ""
+                        publickey: ""
+                        privatekey: ""
+                        flags: "0"
+                        interfaceid: "1"
+                        description: ""
+                        inventory_link: "0"
+                        valuemapid: "0"
+                        lastlogsize: "0"
+                        mtime: "0"
+                    id: 1
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_hostid:
+                  summary: Invalid host ID error
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/hostids/1\": a number is expected."
+                    id: 1
+components:
+  schemas:
+    ItemGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC version
+        method:
+          type: string
+          enum: ["item.get"]
+          description: API method name
+        params:
+          type: object
+          properties:
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items with the given IDs
+            groupids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items from the given host groups
+            templateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items from the given templates
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items from the given hosts
+            proxyids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items monitored by the given proxies
+            interfaceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items that use the given host interfaces
+            graphids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items that are used in the given graphs
+            triggerids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only items that are used in the given triggers
+            webitems:
+              type: boolean
+              description: If true, include web items in the result
+            inherited:
+              type: boolean
+              description: If true, return only items inherited from a template
+            templated:
+              type: boolean
+              description: If true, return only items that belong to templates
+            monitored:
+              type: boolean
+              description: If true, return only enabled items that belong to monitored hosts
+            group:
+              type: string
+              description: Return only items from host groups with the specified name
+            host:
+              type: string
+              description: Return only items from hosts with the specified name
+            application:
+              type: string
+              description: Return only items that belong to an application with the specified name
+            with_triggers:
+              type: boolean
+              description: If true, return only items that have triggers
+            selectHosts:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a hosts property with the host that the item belongs to
+            selectInterfaces:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return an interfaces property with the host interface used by the item
+            selectTriggers:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a triggers property with the triggers that the item is used in
+            selectGraphs:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a graphs property with the graphs that contain the item
+            selectApplications:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return an applications property with applications that the item belongs to
+            selectDiscoveryRule:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a discoveryRule property with the low-level discovery rule
+            selectItemDiscovery:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return an itemDiscovery property with item discovery details
+            selectPreprocessing:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a preprocessing property with item preprocessing options
+            selectValueMap:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a valuemap property with the associated value map
+            selectTags:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return a tags property with the item tags
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            searchByAny:
+              type: boolean
+              description: If true, search by any of the given criteria instead of all
+            startSearch:
+              type: boolean
+              description: Search for values that start with the given string
+            searchWildcardsEnabled:
+              type: boolean
+              description: Enable the use of wildcards in search
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+              description: Object properties to be returned
+            countOutput:
+              type: boolean
+              description: Count the number of retrievable objects instead of returning them
+            editable:
+              type: boolean
+              description: Return only objects that the user has write permissions
+            excludeSearch:
+              type: boolean
+              description: Exclude the search parameter from SQL
+            expandDescription:
+              type: boolean
+              description: Expand macros in description field
+            expandComment:
+              type: boolean
+              description: Expand macros in comments field
+            limit:
+              type: integer
+              description: Limit the number of records returned
+            sortfield:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Sort the result by the given properties
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: Sort order
+            tags:
+              type: array
+              description: Return only items with given tags
+              items:
+                type: object
+                properties:
+                  tag:
+                    type: string
+                    description: Tag name
+                  value:
+                    type: string
+                    description: Tag value
+                  operator:
+                    type: integer
+                    enum: [0, 1, 2, 3, 4, 5]
+                    description: |
+                      Tag search operator:
+                      0 - Like (default)
+                      1 - Equal
+                      2 - Not like
+                      3 - Not equal
+                      4 - Exists
+                      5 - Not exists
+            evaltype:
+              type: integer
+              enum: [0, 2]
+              description: |
+                Tag evaluation type:
+                0 - And/Or (default)
+                2 - Or
+        id:
+          type: integer
+          description: Request ID
+        auth:
+          type: string
+          description: Authentication token (required for most requests)
+    ItemGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Item'
+            - type: integer
+              description: Count of items when countOutput is used
+        id:
+          type: integer
+    Item:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the item
+        delay:
+          type: string
+          description: Update interval of the item
+        hostid:
+          type: string
+          description: ID of the host that the item belongs to
+        interfaceid:
+          type: string
+          description: ID of the item's host interface
+        key_:
+          type: string
+          description: Item key
+        name:
+          type: string
+          description: Name of the item
+        type:
+          type: string
+          description: Type of the item
+        url:
+          type: string
+          description: URL string
+        value_type:
+          type: string
+          description: Type of information of the item
+        allow_traps:
+          type: string
+          description: HTTP agent item trapping options
+        authtype:
+          type: string
+          description: SSH authentication method
+        description:
+          type: string
+          description: Description of the item
+        error:
+          type: string
+          description: Item error text
+        flags:
+          type: string
+          description: Origin of the item
+        follow_redirects:
+          type: string
+          description: HTTP agent item follow redirects option
+        headers:
+          type: object
+          description: HTTP agent item headers
+        history:
+          type: string
+          description: A time unit of how long the history data should be stored
+        http_proxy:
+          type: string
+          description: HTTP agent item HTTP proxy connection string
+        inventory_link:
+          type: string
+          description: ID of the host inventory field that is populated by the item
+        ipmi_sensor:
+          type: string
+          description: IPMI sensor
+        jmx_endpoint:
+          type: string
+          description: JMX agent custom connection string
+        lastlogsize:
+          type: string
+          description: Log file size when last checked
+        logtimefmt:
+          type: string
+          description: Format of the time in log entries
+        master_itemid:
+          type: string
+          description: Master item ID
+        mtime:
+          type: string
+          description: Time when the monitored log file was last updated
+        output_format:
+          type: string
+          description: HTTP agent item output format
+        params:
+          type: string
+          description: Additional parameters depending on the type of the item
+        password:
+          type: string
+          description: Password for authentication
+        post_type:
+          type: string
+          description: HTTP agent item POST type
+        privatekey:
+          type: string
+          description: Name of the private key file
+        publickey:
+          type: string
+          description: Name of the public key file
+        query_fields:
+          type: array
+          description: HTTP agent item query fields
+        request_method:
+          type: string
+          description: HTTP agent item request method
+        retrieve_mode:
+          type: string
+          description: HTTP agent item retrieve mode
+        snmp_community:
+          type: string
+          description: SNMP community
+        snmp_oid:
+          type: string
+          description: SNMP OID
+        ssl_cert_file:
+          type: string
+          description: HTTP agent item SSL certificate file path
+        ssl_key_file:
+          type: string
+          description: HTTP agent item SSL private key file path
+        ssl_key_password:
+          type: string
+          description: HTTP agent item SSL private key file password
+        status:
+          type: string
+          description: Status of the item
+        status_codes:
+          type: string
+          description: HTTP agent item status codes
+        templateid:
+          type: string
+          description: ID of the parent template item
+        timeout:
+          type: string
+          description: Item data polling timeout
+        trapper_hosts:
+          type: string
+          description: Allowed hosts
+        trends:
+          type: string
+          description: A time unit of how long the trends data should be stored
+        units:
+          type: string
+          description: Value units
+        username:
+          type: string
+          description: Username for authentication
+        uuid:
+          type: string
+          description: Universal unique identifier
+        valuemapid:
+          type: string
+          description: ID of the associated value map
+        verify_host:
+          type: string
+          description: HTTP agent item verify host option
+        verify_peer:
+          type: string
+          description: HTTP agent item verify peer option
+        preprocessing:
+          type: array
+          description: Item preprocessing options
+          items:
+            type: object
+        tags:
+          type: array
+          description: Item tags
+          items:
+            type: object
+            properties:
+              tag:
+                type: string
+                description: Tag name
+              value:
+                type: string
+                description: Tag value
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
+          description: Request ID
