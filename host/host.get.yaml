@@ -1,0 +1,1008 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - host.get
+  version: 6.0.0
+  description: |
+    Retrieve hosts according to the given parameters.
+    
+    This method allows retrieving hosts with flexible filtering and selection options.
+    Supports retrieving related objects such as host groups, interfaces, items, triggers, and inventory data.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/host/get
+
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+
+paths:
+  /:
+    post:
+      summary: Retrieve hosts
+      description: Retrieve hosts according to the given parameters
+      operationId: hostGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostGetRequest'
+            examples:
+              basic_example:
+                summary: Get all hosts with basic information
+                value:
+                  jsonrpc: "2.0"
+                  method: "host.get"
+                  params:
+                    output: ["hostid", "host", "name"]
+                  id: 1
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              filtered_by_group:
+                summary: Get hosts from a specific group
+                value:
+                  jsonrpc: "2.0"
+                  method: "host.get"
+                  params:
+                    output: "extend"
+                    groupids: "4"
+                  id: 2
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              with_interfaces:
+                summary: Get hosts with interface details
+                value:
+                  jsonrpc: "2.0"
+                  method: "host.get"
+                  params:
+                    output: ["hostid", "host"]
+                    selectInterfaces: ["interfaceid", "ip", "dns", "port"]
+                    hostids: ["10084"]
+                  id: 3
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              search_by_name:
+                summary: Search hosts by name pattern
+                value:
+                  jsonrpc: "2.0"
+                  method: "host.get"
+                  params:
+                    output: ["hostid", "host", "name"]
+                    search:
+                      name: "server"
+                    searchWildcardsEnabled: true
+                  id: 4
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              count_only:
+                summary: Get host count
+                value:
+                  jsonrpc: "2.0"
+                  method: "host.get"
+                  params:
+                    countOutput: true
+                  id: 5
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostGetResponse'
+              examples:
+                basic_response:
+                  summary: Basic host information
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - hostid: "10084"
+                        host: "Zabbix server"
+                        name: "Zabbix server"
+                        status: "0"
+                    id: 1
+                
+                extended_response:
+                  summary: Extended host information with interfaces
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - hostid: "10084"
+                        host: "Zabbix server"
+                        available: "1"
+                        description: "The Zabbix server."
+                        disable_until: "0"
+                        error: ""
+                        errors_from: "0"
+                        flags: "0"
+                        inventory_mode: "-1"
+                        ipmi_authtype: "-1"
+                        ipmi_disable_until: "0"
+                        ipmi_error: ""
+                        ipmi_errors_from: "0"
+                        ipmi_password: ""
+                        ipmi_privilege: "2"
+                        ipmi_username: ""
+                        jmx_disable_until: "0"
+                        jmx_error: ""
+                        jmx_errors_from: "0"
+                        maintenance_from: "0"
+                        maintenance_status: "0"
+                        maintenance_type: "0"
+                        maintenanceid: "0"
+                        name: "Zabbix server"
+                        proxy_hostid: "0"
+                        snmp_disable_until: "0"
+                        snmp_error: ""
+                        snmp_errors_from: "0"
+                        status: "0"
+                        templateid: "0"
+                        tls_connect: "1"
+                        tls_accept: "1"
+                        tls_issuer: ""
+                        tls_subject: ""
+                        tls_psk_identity: ""
+                        tls_psk: ""
+                        interfaces:
+                          - interfaceid: "1"
+                            hostid: "10084"
+                            main: "1"
+                            type: "1"
+                            useip: "1"
+                            ip: "127.0.0.1"
+                            dns: ""
+                            port: "10050"
+                    id: 2
+                
+                count_response:
+                  summary: Count result
+                  value:
+                    jsonrpc: "2.0"
+                    result: "5"
+                    id: 3
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters error
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/hostids\": a character string is expected."
+                    id: 1
+
+components:
+  schemas:
+    HostGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC version
+        method:
+          type: string
+          enum: ["host.get"]
+          description: API method name
+        params:
+          type: object
+          description: Request parameters
+          properties:
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts with the given host IDs
+            
+            groupids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that belong to the given groups
+            
+            applicationids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that have the given applications
+            
+            dserviceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that are related to the given discovered services
+            
+            graphids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that have the given graphs
+            
+            httptestids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that have the given web scenarios
+            
+            interfaceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that use the given interfaces
+            
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that have the given items
+            
+            maintenanceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that are affected by the given maintenances
+            
+            monitored_hosts:
+              type: boolean
+              description: Return only monitored hosts
+            
+            proxy_hosts:
+              type: boolean
+              description: Return only proxies
+            
+            proxyids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that are monitored by the given proxies
+            
+            templated_hosts:
+              type: boolean
+              description: Return both hosts and templates
+            
+            templateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that are linked to the given templates
+            
+            triggerids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only hosts that have the given triggers
+            
+            with_items:
+              type: boolean
+              description: Return only hosts that have items
+            
+            with_applications:
+              type: boolean
+              description: Return only hosts that have applications
+            
+            with_graphs:
+              type: boolean
+              description: Return only hosts that have graphs
+            
+            with_httptests:
+              type: boolean
+              description: Return only hosts that have web scenarios
+            
+            with_monitored_httptests:
+              type: boolean
+              description: Return only hosts that have enabled web scenarios
+            
+            with_monitored_items:
+              type: boolean
+              description: Return only hosts that have enabled items
+            
+            with_monitored_triggers:
+              type: boolean
+              description: Return only hosts that have enabled triggers
+            
+            with_simple_graph_items:
+              type: boolean
+              description: Return only hosts that have items with numeric type of information
+            
+            with_triggers:
+              type: boolean
+              description: Return only hosts that have triggers
+            
+            withProblemsSuppressed:
+              type: boolean
+              description: Return hosts that have suppressed problems
+            
+            selectGroups:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host groups that the host belongs to
+            
+            selectHostDiscovery:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host discovery object
+            
+            selectHostGroups:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host groups that the host belongs to
+            
+            selectInterfaces:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host interfaces
+            
+            selectInventory:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host inventory
+            
+            selectItems:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the items from the host
+            
+            selectMacros:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host macros
+            
+            selectParentTemplates:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the templates that the host is linked to
+            
+            selectDashboards:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host dashboards
+            
+            selectTags:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host tags
+            
+            selectInheritedTags:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host tags inherited from templates
+            
+            selectTriggers:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the triggers from the host
+            
+            selectValueMaps:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the value maps used by the host
+            
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            
+            searchInventory:
+              type: object
+              description: Return results that match the given wildcard search performed on host inventory fields
+              additionalProperties: true
+            
+            searchByAny:
+              type: boolean
+              description: If set to true return results that match any of the criteria given in the filter or search parameter
+            
+            startSearch:
+              type: boolean
+              description: The search parameter will compare the beginning of fields
+            
+            excludeSearch:
+              type: boolean
+              description: Return results that do not match the criteria given in the search parameter
+            
+            searchWildcardsEnabled:
+              type: boolean
+              description: If set to true enables the use of wildcards in search parameters
+            
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+              description: Object properties to be returned
+            
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            
+            editable:
+              type: boolean
+              description: If set to true return only objects that the user has write permissions to
+            
+            limit:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned
+            
+            preservekeys:
+              type: boolean
+              description: Use IDs as keys in the resulting array
+            
+            sortfield:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Sort the result by the given properties
+            
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: Sort order
+            
+            tags:
+              type: array
+              items:
+                type: object
+                properties:
+                  tag:
+                    type: string
+                    description: Tag name
+                  value:
+                    type: string
+                    description: Tag value
+                  operator:
+                    type: string
+                    enum: ["0", "1", "2", "3", "4", "5"]
+                    description: Search operator (0-equals, 1-not equals, 2-like, 3-not like, 4-exists, 5-not exists)
+              description: Return only hosts with given tags
+            
+            evaltype:
+              type: string
+              enum: ["0", "2"]
+              description: Tag evaluation type (0-And/Or, 2-Or)
+            
+            severities:
+              type: array
+              items:
+                type: string
+                enum: ["0", "1", "2", "3", "4", "5"]
+              description: Return only hosts that have problems of the given severities
+        
+        id:
+          type: integer
+          description: Request ID
+        
+        auth:
+          type: string
+          description: Authentication token
+
+    HostGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Host'
+            - type: string
+              description: Count result when countOutput is used
+        id:
+          type: integer
+
+    Host:
+      type: object
+      properties:
+        hostid:
+          type: string
+          description: ID of the host
+        host:
+          type: string
+          description: Technical name of the host
+        available:
+          type: string
+          enum: ["0", "1", "2"]
+          description: Availability of Zabbix agent (0-unknown, 1-available, 2-unavailable)
+        description:
+          type: string
+          description: Description of the host
+        disable_until:
+          type: string
+          description: The next polling time of an unavailable Zabbix agent
+        error:
+          type: string
+          description: Error text if Zabbix agent is unavailable
+        errors_from:
+          type: string
+          description: Time when Zabbix agent became unavailable
+        flags:
+          type: string
+          enum: ["0", "4"]
+          description: Origin of the host (0-plain host, 4-discovered host)
+        inventory_mode:
+          type: string
+          enum: ["-1", "0", "1"]
+          description: Host inventory population mode (-1-disabled, 0-manual, 1-automatic)
+        ipmi_authtype:
+          type: string
+          enum: ["-1", "0", "1", "2", "4", "5", "6"]
+          description: IPMI authentication algorithm
+        ipmi_disable_until:
+          type: string
+          description: The next polling time of an unavailable IPMI agent
+        ipmi_error:
+          type: string
+          description: Error text if IPMI agent is unavailable
+        ipmi_errors_from:
+          type: string
+          description: Time when IPMI agent became unavailable
+        ipmi_password:
+          type: string
+          description: IPMI password
+        ipmi_privilege:
+          type: string
+          enum: ["1", "2", "3", "4", "5"]
+          description: IPMI privilege level
+        ipmi_username:
+          type: string
+          description: IPMI username
+        jmx_disable_until:
+          type: string
+          description: The next polling time of an unavailable JMX agent
+        jmx_error:
+          type: string
+          description: Error text if JMX agent is unavailable
+        jmx_errors_from:
+          type: string
+          description: Time when JMX agent became unavailable
+        maintenance_from:
+          type: string
+          description: Starting time of the effective maintenance
+        maintenance_status:
+          type: string
+          enum: ["0", "1"]
+          description: Effective maintenance status (0-no maintenance, 1-maintenance in effect)
+        maintenance_type:
+          type: string
+          enum: ["0", "1"]
+          description: Effective maintenance type (0-maintenance with data collection, 1-maintenance without data collection)
+        maintenanceid:
+          type: string
+          description: ID of the maintenance that is currently in effect on the host
+        name:
+          type: string
+          description: Visible name of the host
+        proxy_hostid:
+          type: string
+          description: ID of the proxy that is used to monitor the host
+        snmp_disable_until:
+          type: string
+          description: The next polling time of an unavailable SNMP agent
+        snmp_error:
+          type: string
+          description: Error text if SNMP agent is unavailable
+        snmp_errors_from:
+          type: string
+          description: Time when SNMP agent became unavailable
+        status:
+          type: string
+          enum: ["0", "1"]
+          description: Status of the host (0-monitored host, 1-unmonitored host)
+        tls_connect:
+          type: string
+          enum: ["1", "2", "4"]
+          description: Connections to host (1-No encryption, 2-PSK, 4-certificate)
+        tls_accept:
+          type: string
+          description: "Connections from host (bitwise combination: 1-No encryption, 2-PSK, 4-certificate)"
+        tls_issuer:
+          type: string
+          description: Certificate issuer
+        tls_subject:
+          type: string
+          description: Certificate subject
+        tls_psk_identity:
+          type: string
+          description: PSK identity
+        tls_psk:
+          type: string
+          description: The preshared key
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostGroup'
+          description: Host groups that the host belongs to
+        interfaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostInterface'
+          description: Host interfaces
+        inventory:
+          $ref: '#/components/schemas/HostInventory'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: Items from the host
+        macros:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMacro'
+          description: Host macros
+        parentTemplates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+          description: Templates linked to the host
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Host tags
+        inheritedTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Host tags inherited from templates
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+          description: Triggers from the host
+
+    HostGroup:
+      type: object
+      properties:
+        groupid:
+          type: string
+        name:
+          type: string
+
+    HostInterface:
+      type: object
+      properties:
+        interfaceid:
+          type: string
+        hostid:
+          type: string
+        main:
+          type: string
+          enum: ["0", "1"]
+        type:
+          type: string
+          enum: ["1", "2", "3", "4"]
+        useip:
+          type: string
+          enum: ["0", "1"]
+        ip:
+          type: string
+        dns:
+          type: string
+        port:
+          type: string
+
+    HostInventory:
+      type: object
+      properties:
+        hostid:
+          type: string
+        inventory_mode:
+          type: string
+        type:
+          type: string
+        type_full:
+          type: string
+        name:
+          type: string
+        alias:
+          type: string
+        os:
+          type: string
+        os_full:
+          type: string
+        os_short:
+          type: string
+        serialno_a:
+          type: string
+        serialno_b:
+          type: string
+        tag:
+          type: string
+        asset_tag:
+          type: string
+        macaddress_a:
+          type: string
+        macaddress_b:
+          type: string
+        hardware:
+          type: string
+        hardware_full:
+          type: string
+        software:
+          type: string
+        software_full:
+          type: string
+        software_app_a:
+          type: string
+        software_app_b:
+          type: string
+        software_app_c:
+          type: string
+        software_app_d:
+          type: string
+        software_app_e:
+          type: string
+        contact:
+          type: string
+        location:
+          type: string
+        location_lat:
+          type: string
+        location_lon:
+          type: string
+        notes:
+          type: string
+        chassis:
+          type: string
+        model:
+          type: string
+        hw_arch:
+          type: string
+        vendor:
+          type: string
+        contract_number:
+          type: string
+        installer_name:
+          type: string
+        deployment_status:
+          type: string
+        url_a:
+          type: string
+        url_b:
+          type: string
+        url_c:
+          type: string
+        host_networks:
+          type: string
+        host_netmask:
+          type: string
+        host_router:
+          type: string
+        oob_ip:
+          type: string
+        oob_netmask:
+          type: string
+        oob_router:
+          type: string
+        date_hw_purchase:
+          type: string
+        date_hw_install:
+          type: string
+        date_hw_expiry:
+          type: string
+        date_hw_decomm:
+          type: string
+        site_address_a:
+          type: string
+        site_address_b:
+          type: string
+        site_address_c:
+          type: string
+        site_city:
+          type: string
+        site_state:
+          type: string
+        site_country:
+          type: string
+        site_zip:
+          type: string
+        site_rack:
+          type: string
+        site_notes:
+          type: string
+        poc_1_name:
+          type: string
+        poc_1_email:
+          type: string
+        poc_1_phone_a:
+          type: string
+        poc_1_phone_b:
+          type: string
+        poc_1_cell:
+          type: string
+        poc_1_screen:
+          type: string
+        poc_1_notes:
+          type: string
+        poc_2_name:
+          type: string
+        poc_2_email:
+          type: string
+        poc_2_phone_a:
+          type: string
+        poc_2_phone_b:
+          type: string
+        poc_2_cell:
+          type: string
+        poc_2_screen:
+          type: string
+        poc_2_notes:
+          type: string
+
+    Item:
+      type: object
+      properties:
+        itemid:
+          type: string
+        name:
+          type: string
+        key_:
+          type: string
+        type:
+          type: string
+
+    UserMacro:
+      type: object
+      properties:
+        hostmacroid:
+          type: string
+        hostid:
+          type: string
+        macro:
+          type: string
+        value:
+          type: string
+
+    Template:
+      type: object
+      properties:
+        templateid:
+          type: string
+        host:
+          type: string
+        name:
+          type: string
+
+    Tag:
+      type: object
+      properties:
+        tag:
+          type: string
+        value:
+          type: string
+
+    Trigger:
+      type: object
+      properties:
+        triggerid:
+          type: string
+        description:
+          type: string
+        expression:
+          type: string
+        priority:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
