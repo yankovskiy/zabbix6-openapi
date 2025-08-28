@@ -146,6 +146,8 @@ https://www.zabbix.com/documentation/6.0/en/manual/api/reference
 - ✅ Реализована поддержка host.get метода
 - ✅ Реализована поддержка item.get метода
 - ✅ Реализована поддержка trigger.get метода
+- ✅ Реализована поддержка template.get метода
+- ✅ Реализована поддержка hostinterface.get метода
 - ✅ Добавлена система валидации OpenAPI спецификаций
 - ⏳ OpenAPI спецификации для остальных методов создаются по запросу
 
