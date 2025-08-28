@@ -522,6 +522,8 @@ components:
         query_fields:
           type: array
           description: HTTP agent item query fields
+          items:
+            type: string
         request_method:
           type: string
           description: HTTP agent item request method
