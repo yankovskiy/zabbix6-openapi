@@ -1,0 +1,307 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - trend.get
+  version: 6.0.0
+  description: |
+    Retrieve trend data for items.
+    
+    The method allows you to retrieve trend data collected for specific items over a time period.
+    Trend data contains aggregated statistics (min, max, average values) for items.
+    
+    This method is available to all user types.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/trend/get
+
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+
+paths:
+  /:
+    post:
+      summary: Retrieve trend data
+      description: Retrieves trend data for items. Supports filtering by item IDs and time periods.
+      operationId: trendGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrendGetRequest'
+            examples:
+              basic_request:
+                summary: Retrieve trends for specific item
+                description: Get trend data for item ID 23715 with limited output
+                value:
+                  jsonrpc: "2.0"
+                  method: "trend.get"
+                  params:
+                    output:
+                      - "itemid"
+                      - "clock"
+                      - "num"
+                      - "value_min"
+                      - "value_avg"
+                      - "value_max"
+                    itemids: 
+                      - "23715"
+                    limit: 1
+                  id: 1
+                  auth: "your_auth_token"
+              time_range_request:
+                summary: Retrieve trends within time range
+                description: Get trend data for specific time period
+                value:
+                  jsonrpc: "2.0"
+                  method: "trend.get"
+                  params:
+                    output: "extend"
+                    itemids:
+                      - "23715"
+                      - "23716"
+                    time_from: 1446199200
+                    time_till: 1446285600
+                  id: 2
+                  auth: "your_auth_token"
+              count_request:
+                summary: Count trend records
+                description: Get count of trend records matching criteria
+                value:
+                  jsonrpc: "2.0"
+                  method: "trend.get"
+                  params:
+                    countOutput: true
+                    itemids:
+                      - "23715"
+                  id: 3
+                  auth: "your_auth_token"
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendGetResponse'
+              examples:
+                basic_response:
+                  summary: Basic trend data response
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - itemid: "23715"
+                        clock: "1446199200"
+                        num: "60"
+                        value_min: "0.165"
+                        value_avg: "0.2168"
+                        value_max: "0.35"
+                    id: 1
+                extended_response:
+                  summary: Extended trend data response
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - itemid: "23715"
+                        clock: "1446199200"
+                        num: "60"
+                        value_min: "0.165"
+                        value_avg: "0.2168"
+                        value_max: "0.35"
+                      - itemid: "23716"
+                        clock: "1446199200"
+                        num: "58"
+                        value_min: "1.25"
+                        value_avg: "1.68"
+                        value_max: "2.15"
+                    id: 2
+                count_response:
+                  summary: Count response
+                  value:
+                    jsonrpc: "2.0"
+                    result: "45"
+                    id: 3
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/params/itemids\": a string is expected."
+                    id: 1
+
+components:
+  schemas:
+    TrendGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC protocol version
+        method:
+          type: string
+          enum: ["trend.get"]
+          description: API method name
+        params:
+          type: object
+          properties:
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: |
+                Filter trends by specific item IDs.
+                Can be a single item ID as string or array of item IDs.
+            time_from:
+              type: integer
+              description: |
+                Retrieve trends collected after this time.
+                Unix timestamp.
+            time_till:
+              type: integer
+              description: |
+                Retrieve trends collected before this time.
+                Unix timestamp.
+            countOutput:
+              type: boolean
+              description: |
+                Return the count of retrieved objects instead of the actual data.
+                Default: false
+            limit:
+              type: integer
+              minimum: 1
+              description: |
+                Limit the number of returned objects.
+                Applied after sorting.
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum:
+                      - "itemid"
+                      - "clock"
+                      - "num"
+                      - "value_min"
+                      - "value_avg"
+                      - "value_max"
+              description: |
+                Object properties to be returned. 
+                - "extend": return all object properties
+                - Array: specific properties to return
+                Default: ["itemid"]
+        id:
+          type: integer
+          description: Request identifier
+        auth:
+          type: string
+          description: Authentication token
+
+    TrendGetResponse:
+      type: object
+      required:
+        - jsonrpc
+        - result
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/TrendObject'
+            - type: string
+              description: Count of retrieved objects (when countOutput is used)
+        id:
+          type: integer
+
+    TrendObject:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the item the trend belongs to
+        clock:
+          type: string
+          description: |
+            Time when the trend data was collected.
+            Unix timestamp as string.
+        num:
+          type: string
+          description: |
+            Number of values processed during the trend aggregation period.
+            String representation of integer.
+        value_min:
+          type: string
+          description: |
+            Minimum value during the trend period.
+            String representation of numeric value.
+        value_avg:
+          type: string
+          description: |
+            Average value during the trend period.
+            String representation of numeric value.
+        value_max:
+          type: string
+          description: |
+            Maximum value during the trend period.
+            String representation of numeric value.
+      description: |
+        Trend object containing aggregated statistics for an item over a time period.
+        All numeric values are returned as strings to maintain precision.
+
+    ErrorResponse:
+      type: object
+      required:
+        - jsonrpc
+        - error
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              description: Error code
+              enum:
+                - -32700  # Parse error
+                - -32600  # Invalid Request
+                - -32601  # Method not found
+                - -32602  # Invalid params
+                - -32603  # Internal error
+                - -32500  # Application error
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
+          description: Request identifier

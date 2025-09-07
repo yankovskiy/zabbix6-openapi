@@ -1,0 +1,370 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - history.get
+  version: 6.0.0
+  description: |
+    Retrieve historical data for monitored items.
+    
+    The method allows you to retrieve historical monitoring data for specific items.
+    Historical data contains the actual values collected from monitored items over time.
+    
+    This method is available to all user types. Permissions are limited by user role.
+    The method can return data from deleted entities that have not yet been removed by the housekeeper.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/history/get
+
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+
+paths:
+  /:
+    post:
+      summary: Retrieve historical data
+      description: Retrieves historical monitoring data for items. Supports filtering by hosts, items, time periods, and different data types.
+      operationId: historyGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HistoryGetRequest'
+            examples:
+              basic_request:
+                summary: Retrieve history for specific item
+                description: Get 10 most recent numeric float values for a specific item
+                value:
+                  jsonrpc: "2.0"
+                  method: "history.get"
+                  params:
+                    output: "extend"
+                    history: 0
+                    itemids: "23296"
+                    sortfield: "clock"
+                    sortorder: "DESC"
+                    limit: 10
+                  id: 1
+                  auth: "your_auth_token"
+              time_range_request:
+                summary: Retrieve history within time range
+                description: Get historical data for specific time period
+                value:
+                  jsonrpc: "2.0"
+                  method: "history.get"
+                  params:
+                    output:
+                      - "itemid"
+                      - "clock"
+                      - "value"
+                      - "ns"
+                    history: 3
+                    itemids:
+                      - "23296"
+                      - "23297"
+                    time_from: 1446199200
+                    time_till: 1446285600
+                  id: 2
+                  auth: "your_auth_token"
+              text_history_request:
+                summary: Retrieve text/character history
+                description: Get character or text type historical data
+                value:
+                  jsonrpc: "2.0"
+                  method: "history.get"
+                  params:
+                    output: "extend"
+                    history: 1
+                    hostids:
+                      - "10084"
+                    limit: 5
+                  id: 3
+                  auth: "your_auth_token"
+              count_request:
+                summary: Count history records
+                description: Get count of history records matching criteria
+                value:
+                  jsonrpc: "2.0"
+                  method: "history.get"
+                  params:
+                    countOutput: true
+                    history: 0
+                    itemids:
+                      - "23296"
+                  id: 4
+                  auth: "your_auth_token"
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryGetResponse'
+              examples:
+                numeric_response:
+                  summary: Numeric history data response
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - itemid: "23296"
+                        clock: "1446285720"
+                        value: "0.2859"
+                        ns: "211900583"
+                      - itemid: "23296"
+                        clock: "1446285660"
+                        value: "0.2772"
+                        ns: "211900344"
+                      - itemid: "23296"
+                        clock: "1446285600"
+                        value: "0.2683"
+                        ns: "211900105"
+                    id: 1
+                text_response:
+                  summary: Text/Character history data response
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - itemid: "23298"
+                        clock: "1446285720"
+                        value: "Server status: Online"
+                        ns: "0"
+                      - itemid: "23298"
+                        clock: "1446285660"
+                        value: "Server status: Online"
+                        ns: "0"
+                    id: 3
+                count_response:
+                  summary: Count response
+                  value:
+                    jsonrpc: "2.0"
+                    result: "1487"
+                    id: 4
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/params/history\": an integer is expected."
+                    id: 1
+                invalid_history_type:
+                  summary: Invalid history type
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/params/history\": value must be one of 0, 1, 2, 3, 4."
+                    id: 1
+
+components:
+  schemas:
+    HistoryGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC protocol version
+        method:
+          type: string
+          enum: ["history.get"]
+          description: API method name
+        params:
+          type: object
+          required:
+            - history
+          properties:
+            history:
+              type: integer
+              enum: [0, 1, 2, 3, 4]
+              description: |
+                History object type to retrieve:
+                - 0: Numeric float
+                - 1: Character
+                - 2: Log
+                - 3: Numeric unsigned (default)
+                - 4: Text
+              default: 3
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: |
+                Filter history by specific host IDs.
+                Can be a single host ID as string or array of host IDs.
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: |
+                Filter history by specific item IDs.
+                Can be a single item ID as string or array of item IDs.
+            time_from:
+              type: integer
+              description: |
+                Retrieve history values after this time.
+                Unix timestamp.
+            time_till:
+              type: integer
+              description: |
+                Retrieve history values before this time.
+                Unix timestamp.
+            sortfield:
+              oneOf:
+                - type: string
+                  enum: ["itemid", "clock"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["itemid", "clock"]
+              description: |
+                Sort the result by the given properties:
+                - "itemid": Sort by item ID
+                - "clock": Sort by timestamp
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: |
+                Sort order for each sort field:
+                - "ASC": Ascending order
+                - "DESC": Descending order
+            countOutput:
+              type: boolean
+              description: |
+                Return the count of retrieved objects instead of the actual data.
+                Default: false
+            limit:
+              type: integer
+              minimum: 1
+              description: |
+                Limit the number of returned objects.
+                Applied after sorting.
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+                    enum:
+                      - "itemid"
+                      - "clock"
+                      - "value"
+                      - "ns"
+              description: |
+                Object properties to be returned:
+                - "extend": return all object properties
+                - Array: specific properties to return
+                Default: ["itemid"]
+        id:
+          type: integer
+          description: Request identifier
+        auth:
+          type: string
+          description: Authentication token
+
+    HistoryGetResponse:
+      type: object
+      required:
+        - jsonrpc
+        - result
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/HistoryObject'
+            - type: string
+              description: Count of retrieved objects (when countOutput is used)
+        id:
+          type: integer
+
+    HistoryObject:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the item the history value belongs to
+        clock:
+          type: string
+          description: |
+            Time when the history value was recorded.
+            Unix timestamp as string.
+        value:
+          type: string
+          description: |
+            The recorded value. Format depends on the history type:
+            - Numeric types: String representation of the number
+            - Character/Text/Log types: String content
+        ns:
+          type: string
+          description: |
+            Nanosecond precision timestamp.
+            String representation of nanoseconds (0-999999999).
+      description: |
+        History object containing a single historical data point for an item.
+        All values are returned as strings to maintain precision and consistency across data types.
+
+    ErrorResponse:
+      type: object
+      required:
+        - jsonrpc
+        - error
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: integer
+              description: Error code
+              enum:
+                - -32700  # Parse error
+                - -32600  # Invalid Request
+                - -32601  # Method not found
+                - -32602  # Invalid params
+                - -32603  # Internal error
+                - -32500  # Application error
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
+          description: Request identifier
