@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - hostinterface.get
+  version: 6.0.0
+  description: |
+    The hostinterface.get method allows to retrieve host interfaces according to the given parameters.
+    
+    This method is available to users of all types. Permissions to call the method can be revoked in user role settings.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/hostinterface/get
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+paths:
+  /:
+    post:
+      summary: Retrieve host interfaces
+      description: Returns an array of host interface objects according to the given parameters
+      operationId: hostinterfaceGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostInterfaceGetRequest'
+            examples:
+              get_interfaces_by_hostid:
+                summary: Retrieve interfaces for specific host
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostinterface.get"
+                  params:
+                    output: "extend"
+                    hostids: "30057"
+                  auth: "auth_token_here"
+                  id: 1
+              get_interfaces_with_items:
+                summary: Retrieve interfaces with associated items
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostinterface.get"
+                  params:
+                    output: ["interfaceid", "hostid", "ip", "dns", "port", "type", "main"]
+                    selectItems: ["itemid", "name", "key_", "type"]
+                    hostids: ["30057", "30058"]
+                  auth: "auth_token_here"
+                  id: 1
+              get_interface_count:
+                summary: Get count of interfaces
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostinterface.get"
+                  params:
+                    countOutput: true
+                    filter:
+                      type: 1
+                  auth: "auth_token_here"
+                  id: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostInterfaceGetResponse'
+              examples:
+                interfaces_retrieved:
+                  summary: Host interfaces retrieved successfully
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - interfaceid: "30048"
+                        hostid: "30057"
+                        main: "1"
+                        type: "1"
+                        useip: "1"
+                        ip: "192.168.3.1"
+                        dns: ""
+                        port: "10050"
+                        available: "1"
+                        error: ""
+                        errors_from: "0"
+                        disable_until: "0"
+                    id: 1
+                count_result:
+                  summary: Interface count
+                  value:
+                    jsonrpc: "2.0"
+                    result: "5"
+                    id: 1
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters provided
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/1/output\": value must be one of \"extend\", \"count\"."
+                    id: 1
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                auth_failed:
+                  summary: Authentication token invalid or expired
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Session terminated, re-login, please."
+                    id: 1
+
+components:
+  schemas:
+    HostInterfaceGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        method:
+          type: string
+          enum: ["hostinterface.get"]
+        params:
+          type: object
+          properties:
+            interfaceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host interfaces with the given interface IDs
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host interfaces used by the given hosts
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host interfaces used by the given items
+            triggerids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host interfaces used by items in the given triggers
+            selectItems:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return associated items in the items property
+            selectHosts:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host that uses the interface in the hosts property
+            limitSelects:
+              type: integer
+              description: Limits the number of records returned by subselects
+            sortfield:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              enum: ["interfaceid", "dns", "ip"]
+              description: Sort the result by the given properties
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            excludeSearch:
+              type: boolean
+              description: Return results that do not match the criteria given in the search parameter
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            limit:
+              type: integer
+              description: Limit the number of records returned
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["interfaceid", "hostid", "main", "type", "useip", "ip", "dns", "port", "available", "error", "errors_from", "disable_until"]
+              description: Object properties to be returned
+            preservekeys:
+              type: boolean
+              description: Use IDs as keys in the resulting array
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            searchByAny:
+              type: boolean
+              description: If set to true return results that match any of the criteria given in the filter or search parameter instead of all of them
+            searchWildcardsEnabled:
+              type: boolean
+              description: If set to true enables the use of "*" as a wildcard character in the search parameter
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: Sort order
+            startSearch:
+              type: boolean
+              description: The search parameter will compare the beginning of fields
+        id:
+          type: integer
+        auth:
+          type: string
+          description: Authentication token (required for most operations)
+
+    HostInterfaceGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/HostInterface'
+            - type: string
+              description: Count of interfaces when countOutput is used
+        id:
+          type: integer
+
+    HostInterface:
+      type: object
+      description: Host interface object
+      properties:
+        interfaceid:
+          type: string
+          description: ID of the interface
+        hostid:
+          type: string
+          description: ID of the host the interface belongs to
+        main:
+          type: string
+          enum: ["0", "1"]
+          description: Whether the interface is used as default on the host. Only one interface of some type can be set as default on a host (0 - not default, 1 - default)
+        type:
+          type: string
+          enum: ["1", "2", "3", "4"]
+          description: Interface type (1 - agent, 2 - SNMP, 3 - IPMI, 4 - JMX)
+        useip:
+          type: string
+          enum: ["0", "1"]
+          description: Whether the connection should be made via IP (0 - connect using host DNS name, 1 - connect using host IP address for this host interface)
+        ip:
+          type: string
+          description: IP address used by the interface. Can be empty if the connection is made via DNS
+        dns:
+          type: string
+          description: DNS name used by the interface. Can be empty if the connection is made via IP
+        port:
+          type: string
+          description: Port number used by the interface. Can contain user macros
+        available:
+          type: string
+          enum: ["0", "1", "2"]
+          description: Availability of interface (0 - unknown, 1 - available, 2 - unavailable)
+        error:
+          type: string
+          description: Error text if there have been connection problems
+        errors_from:
+          type: string
+          description: Time when the interface became unavailable
+        disable_until:
+          type: string
+          description: Time until the interface is disabled
+        items:
+          type: array
+          items:
+            type: object
+          description: Items that use this interface (only if selectItems is used)
+        hosts:
+          type: array
+          items:
+            type: object
+          description: Host that uses this interface (only if selectHosts is used)
+
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error data
+        id:
+          type: integer

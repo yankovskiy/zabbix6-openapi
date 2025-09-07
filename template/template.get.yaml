@@ -1,0 +1,727 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - template.get
+  version: 6.0.0
+  description: |
+    Retrieve templates according to the given parameters.
+    
+    This method allows retrieving templates with flexible filtering and selection options.
+    Supports retrieving related objects such as host groups, linked hosts, items, triggers, graphs, and more.
+    Available to all user types, but can be restricted by user role settings.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/template/get
+
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+
+paths:
+  /:
+    post:
+      summary: Retrieve templates
+      description: Retrieve templates according to the given parameters
+      operationId: templateGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateGetRequest'
+            examples:
+              basic_example:
+                summary: Get all templates with basic information
+                value:
+                  jsonrpc: "2.0"
+                  method: "template.get"
+                  params:
+                    output: ["templateid", "host", "name"]
+                  id: 1
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              filtered_by_group:
+                summary: Get templates from a specific group
+                value:
+                  jsonrpc: "2.0"
+                  method: "template.get"
+                  params:
+                    output: "extend"
+                    groupids: "4"
+                  id: 2
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              with_hosts_and_items:
+                summary: Get templates with linked hosts and items
+                value:
+                  jsonrpc: "2.0"
+                  method: "template.get"
+                  params:
+                    output: ["templateid", "host", "name"]
+                    selectHosts: ["hostid", "host", "name"]
+                    selectItems: ["itemid", "name", "key_", "type"]
+                  id: 3
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              search_by_tags:
+                summary: Search templates by tags
+                value:
+                  jsonrpc: "2.0"
+                  method: "template.get"
+                  params:
+                    output: "extend"
+                    evaltype: 0
+                    tags:
+                      - tag: "Environment"
+                        value: "Production"
+                        operator: 0
+                  id: 4
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              count_templates:
+                summary: Count templates matching criteria
+                value:
+                  jsonrpc: "2.0"
+                  method: "template.get"
+                  params:
+                    countOutput: true
+                    groupids: ["1", "2"]
+                  id: 5
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateGetResponse'
+              examples:
+                success_response:
+                  summary: Successful template retrieval
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - templateid: "10001"
+                        host: "Template OS Linux"
+                        name: "Template OS Linux by Zabbix agent"
+                        status: "0"
+                        description: "Template for Linux OS monitoring"
+                        uuid: "a571c0d144b14fd4a87a9d9b2aa9fcd6"
+                        vendor_name: "Zabbix"
+                        vendor_version: "6.0-0"
+                      - templateid: "10047"
+                        host: "Template App Apache by HTTP"
+                        name: "Template App Apache by HTTP"
+                        status: "0"
+                        description: "Template for Apache monitoring via HTTP"
+                        uuid: "b571c0d144b14fd4a87a9d9b2aa9fcd7"
+                        vendor_name: "Zabbix"
+                        vendor_version: "6.0-0"
+                    id: 1
+                
+                count_response:
+                  summary: Count response
+                  value:
+                    jsonrpc: "2.0"
+                    result: "5"
+                    id: 5
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/\": the parameter \"method\" is missing."
+                    id: 1
+
+components:
+  schemas:
+    TemplateGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC version
+        method:
+          type: string
+          enum: ["template.get"]
+          description: API method name
+        params:
+          type: object
+          properties:
+            # Filtering parameters
+            templateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates with the given template IDs
+            
+            groupids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that belong to the given host groups
+            
+            parentTemplateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that are linked to the given parent templates
+            
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that are linked to the given hosts or templates
+            
+            graphids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that contain the given graphs
+            
+            itemids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that contain the given items
+            
+            triggerids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only templates that contain the given triggers
+            
+            # Flags
+            with_items:
+              type: boolean
+              description: Return only templates that have items
+            
+            with_triggers:
+              type: boolean
+              description: Return only templates that have triggers
+            
+            with_graphs:
+              type: boolean
+              description: Return only templates that have graphs
+            
+            with_httptests:
+              type: boolean
+              description: Return only templates that have web scenarios
+            
+            # Tag searching
+            evaltype:
+              type: integer
+              enum: [0, 2]
+              description: Rules for tag searching. 0 - (default) And/Or; 2 - Or
+            
+            tags:
+              type: array
+              items:
+                type: object
+                properties:
+                  tag:
+                    type: string
+                    description: Tag name
+                  value:
+                    type: string
+                    description: Tag value
+                  operator:
+                    type: integer
+                    enum: [0, 1, 2, 3, 4, 5]
+                    description: Tag operator. 0 - (default) Like; 1 - Equal; 2 - Not like; 3 - Not equal; 4 - Exists; 5 - Not exists
+              description: Return only templates with given tags. Exact match by tag and case-sensitive or case-insensitive search by tag value depending on operator value
+            
+            # Selection parameters
+            selectGroups:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return host groups that the template belongs to
+            
+            selectHosts:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return hosts that are linked to the template
+            
+            selectTemplates:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return child templates linked to the template
+            
+            selectParentTemplates:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return parent templates that the template is linked to
+            
+            selectHttpTests:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return web scenarios from the template
+            
+            selectItems:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return items from the template
+            
+            selectDiscoveries:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return low-level discoveries from the template
+            
+            selectTriggers:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return triggers from the template
+            
+            selectGraphs:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return graphs from the template
+            
+            selectMacros:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return macros from the template
+            
+            selectDashboards:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return dashboards from the template
+            
+            selectTags:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return template tags
+            
+            selectValueMaps:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return value maps used by template items
+            
+            # Query parameters
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["templateid", "host", "name", "status", "description", "uuid", "vendor_name", "vendor_version"]
+              description: Object properties to be returned
+            
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            
+            editable:
+              type: boolean
+              description: Return only templates that the user has write permissions to
+            
+            excludeSearch:
+              type: boolean
+              description: Return results that do not match the criteria given in the search parameter
+            
+            filter:
+              type: object
+              additionalProperties: true
+              description: Return only those results that exactly match the given filter
+            
+            limit:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned
+            
+            preservekeys:
+              type: boolean
+              description: Use IDs as keys in the resulting array
+            
+            search:
+              type: object
+              additionalProperties: true
+              description: Return results that match the given wildcard search
+            
+            searchByAny:
+              type: boolean
+              description: If set to true return results that match any of the criteria given in the filter or search parameter instead of all of them
+            
+            searchWildcardsEnabled:
+              type: boolean
+              description: If set to true enables the use of "*" as a wildcard character in the search parameter
+            
+            sortfield:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Sort the result by the given properties
+            
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: Order of sorting
+            
+            startSearch:
+              type: boolean
+              description: The search parameter will compare the beginning of fields
+        
+        id:
+          type: integer
+          description: Request identifier
+        
+        auth:
+          type: string
+          description: Authentication token (not required for user.login method)
+    
+    TemplateGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC version
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Template'
+            - type: string
+              description: Count of templates when countOutput is used
+        id:
+          type: integer
+          description: Request identifier
+    
+    Template:
+      type: object
+      properties:
+        templateid:
+          type: string
+          description: ID of the template
+        host:
+          type: string
+          description: Technical name of the template
+        name:
+          type: string
+          description: Visible name of the template
+        status:
+          type: string
+          enum: ["0", "1"]
+          description: Status of the template. 0 - enabled; 1 - disabled
+        description:
+          type: string
+          description: Description of the template
+        uuid:
+          type: string
+          description: Universal unique identifier of the template
+        vendor_name:
+          type: string
+          description: Vendor name of the template
+        vendor_version:
+          type: string
+          description: Vendor version of the template
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostGroup'
+          description: Host groups that the template belongs to (if selectGroups is used)
+        hosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Host'
+          description: Hosts that are linked to the template (if selectHosts is used)
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+          description: Child templates linked to the template (if selectTemplates is used)
+        parentTemplates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+          description: Parent templates that the template is linked to (if selectParentTemplates is used)
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: Items from the template (if selectItems is used)
+        discoveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscoveryRule'
+          description: Low-level discoveries from the template (if selectDiscoveries is used)
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+          description: Triggers from the template (if selectTriggers is used)
+        graphs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Graph'
+          description: Graphs from the template (if selectGraphs is used)
+        httpTests:
+          type: array
+          items:
+            $ref: '#/components/schemas/HttpTest'
+          description: Web scenarios from the template (if selectHttpTests is used)
+        macros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Macro'
+          description: Macros from the template (if selectMacros is used)
+        dashboards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dashboard'
+          description: Dashboards from the template (if selectDashboards is used)
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Template tags (if selectTags is used)
+        valuemaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueMap'
+          description: Value maps used by template items (if selectValueMaps is used)
+    
+    HostGroup:
+      type: object
+      properties:
+        groupid:
+          type: string
+          description: ID of the host group
+        name:
+          type: string
+          description: Name of the host group
+    
+    Host:
+      type: object
+      properties:
+        hostid:
+          type: string
+          description: ID of the host
+        host:
+          type: string
+          description: Technical name of the host
+        name:
+          type: string
+          description: Visible name of the host
+        status:
+          type: string
+          description: Status of the host
+    
+    Item:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the item
+        name:
+          type: string
+          description: Name of the item
+        key_:
+          type: string
+          description: Item key
+        type:
+          type: string
+          description: Type of the item
+    
+    DiscoveryRule:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the discovery rule
+        name:
+          type: string
+          description: Name of the discovery rule
+        key_:
+          type: string
+          description: Discovery rule key
+    
+    Trigger:
+      type: object
+      properties:
+        triggerid:
+          type: string
+          description: ID of the trigger
+        description:
+          type: string
+          description: Name of the trigger
+        expression:
+          type: string
+          description: Reduced trigger expression
+        priority:
+          type: string
+          description: Severity of the trigger
+    
+    Graph:
+      type: object
+      properties:
+        graphid:
+          type: string
+          description: ID of the graph
+        name:
+          type: string
+          description: Name of the graph
+    
+    HttpTest:
+      type: object
+      properties:
+        httptestid:
+          type: string
+          description: ID of the web scenario
+        name:
+          type: string
+          description: Name of the web scenario
+    
+    Macro:
+      type: object
+      properties:
+        hostmacroid:
+          type: string
+          description: ID of the macro
+        macro:
+          type: string
+          description: Name of the macro
+        value:
+          type: string
+          description: Value of the macro
+    
+    Dashboard:
+      type: object
+      properties:
+        dashboardid:
+          type: string
+          description: ID of the dashboard
+        name:
+          type: string
+          description: Name of the dashboard
+    
+    Tag:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: Tag name
+        value:
+          type: string
+          description: Tag value
+    
+    ValueMap:
+      type: object
+      properties:
+        valuemapid:
+          type: string
+          description: ID of the value map
+        name:
+          type: string
+          description: Name of the value map
+    
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error data
+        id:
+          type: integer
+          description: Request identifier

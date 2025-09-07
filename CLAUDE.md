@@ -146,6 +146,8 @@ https://www.zabbix.com/documentation/6.0/en/manual/api/reference
 - ✅ Реализована поддержка host.get метода
 - ✅ Реализована поддержка item.get метода
 - ✅ Реализована поддержка trigger.get метода
+- ✅ Реализована поддержка template.get метода
+- ✅ Реализована поддержка hostinterface.get метода
 - ✅ Реализована поддержка drule.get метода
 - ✅ Реализована поддержка hostgroup.get метода
 - ✅ Реализована поддержка history.get метода
