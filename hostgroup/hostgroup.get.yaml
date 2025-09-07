@@ -1,0 +1,551 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - hostgroup.get
+  version: 6.0.0
+  description: |
+    Retrieve host groups according to the given parameters.
+    
+    This method allows retrieving host groups with flexible filtering and selection options.
+    Supports retrieving related objects such as hosts, templates, discovery rules, and group discovery information.
+    Available to users of any type with permissions configurable in user role settings.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/hostgroup/get
+
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+
+paths:
+  /:
+    post:
+      summary: Retrieve host groups
+      description: Retrieve host groups according to the given parameters
+      operationId: hostgroupGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostGroupGetRequest'
+            examples:
+              basic_example:
+                summary: Get all host groups with basic information
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    output: ["groupid", "name"]
+                  id: 1
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              extended_example:
+                summary: Get host groups with extended information
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    output: "extend"
+                  id: 2
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              filtered_by_name:
+                summary: Get host groups by name filter
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    output: "extend"
+                    filter:
+                      name: ["Zabbix servers", "Linux servers"]
+                  id: 3
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              with_hosts:
+                summary: Get host groups with host details
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    output: ["groupid", "name"]
+                    selectHosts: ["hostid", "host", "name"]
+                    groupids: ["2"]
+                  id: 4
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              search_by_name:
+                summary: Search host groups by name pattern
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    output: ["groupid", "name"]
+                    search:
+                      name: "server"
+                    searchWildcardsEnabled: true
+                  id: 5
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+              
+              count_only:
+                summary: Get host group count
+                value:
+                  jsonrpc: "2.0"
+                  method: "hostgroup.get"
+                  params:
+                    countOutput: true
+                  id: 6
+                  auth: "038e1d7b1735c6a5436ee9eae095879e"
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HostGroupGetResponse'
+              examples:
+                basic_response:
+                  summary: Basic host group information
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - groupid: "2"
+                        name: "Linux servers"
+                      - groupid: "4"
+                        name: "Zabbix servers"
+                    id: 1
+                
+                extended_response:
+                  summary: Extended host group information
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - groupid: "2"
+                        name: "Linux servers"
+                        internal: "0"
+                        uuid: ""
+                      - groupid: "4"
+                        name: "Zabbix servers"
+                        internal: "0"
+                        uuid: ""
+                    id: 2
+                
+                with_hosts_response:
+                  summary: Host groups with host details
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - groupid: "2"
+                        name: "Linux servers"
+                        hosts:
+                          - hostid: "10084"
+                            host: "Zabbix server"
+                            name: "Zabbix server"
+                          - hostid: "10107"
+                            host: "Linux server"
+                            name: "Linux server"
+                    id: 3
+                
+                count_response:
+                  summary: Count result
+                  value:
+                    jsonrpc: "2.0"
+                    result: "5"
+                    id: 4
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_params:
+                  summary: Invalid parameters error
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32602
+                      message: "Invalid params."
+                      data: "Invalid parameter \"/groupids\": a character string is expected."
+                    id: 1
+                
+                permission_denied:
+                  summary: Permission denied error
+                  value:
+                    jsonrpc: "2.0"
+                    error:
+                      code: -32500
+                      message: "Application error."
+                      data: "No permissions to referred object or it does not exist!"
+                    id: 2
+
+components:
+  schemas:
+    HostGroupGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+          description: JSON-RPC version
+        method:
+          type: string
+          enum: ["hostgroup.get"]
+          description: API method name
+        params:
+          type: object
+          description: Request parameters
+          properties:
+            groupids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host groups with the given group IDs
+            
+            hostids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host groups that contain the given hosts
+            
+            templateids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host groups that contain the given templates
+            
+            graphids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host groups that contain hosts or templates with the given graphs
+            
+            maintenanceids:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Return only host groups that are affected by the given maintenances
+            
+            monitored_hosts:
+              type: boolean
+              description: Return only host groups that contain monitored hosts
+            
+            real_hosts:
+              type: boolean
+              description: Return only host groups that contain hosts
+            
+            templated_hosts:
+              type: boolean
+              description: Return only host groups that contain templates
+            
+            with_applications:
+              type: boolean
+              description: Return only host groups that contain hosts with applications
+            
+            with_graphs:
+              type: boolean
+              description: Return only host groups that contain hosts with graphs
+            
+            with_hosts:
+              type: boolean
+              description: Return only host groups that contain hosts or templates
+            
+            with_httptests:
+              type: boolean
+              description: Return only host groups that contain hosts with web scenarios
+            
+            with_items:
+              type: boolean
+              description: Return only host groups that contain hosts with items
+            
+            with_monitored_httptests:
+              type: boolean
+              description: Return only host groups that contain hosts with enabled web scenarios
+            
+            with_monitored_items:
+              type: boolean
+              description: Return only host groups that contain hosts with enabled items
+            
+            with_monitored_triggers:
+              type: boolean
+              description: Return only host groups that contain hosts with enabled triggers
+            
+            with_simple_graph_items:
+              type: boolean
+              description: Return only host groups that contain hosts with numeric items
+            
+            with_triggers:
+              type: boolean
+              description: Return only host groups that contain hosts with triggers
+            
+            selectDiscoveryRule:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the LLD rule that created the host group
+            
+            selectGroupDiscovery:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the host group discovery object
+            
+            selectHosts:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the hosts that belong to the host group
+            
+            selectTemplates:
+              oneOf:
+                - type: string
+                  enum: ["extend"]
+                - type: array
+                  items:
+                    type: string
+              description: Return the templates that belong to the host group
+            
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            
+            searchByAny:
+              type: boolean
+              description: If set to true return results that match any of the criteria given in the filter or search parameter
+            
+            startSearch:
+              type: boolean
+              description: The search parameter will compare the beginning of fields
+            
+            excludeSearch:
+              type: boolean
+              description: Return results that do not match the criteria given in the search parameter
+            
+            searchWildcardsEnabled:
+              type: boolean
+              description: If set to true enables the use of wildcards in search parameters
+            
+            output:
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+              description: Object properties to be returned
+            
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            
+            editable:
+              type: boolean
+              description: If set to true return only objects that the user has write permissions to
+            
+            limit:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned
+            
+            preservekeys:
+              type: boolean
+              description: Use IDs as keys in the resulting array
+            
+            sortfield:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              description: Sort the result by the given properties
+            
+            sortorder:
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+              description: Sort order
+        
+        id:
+          type: integer
+          description: Request ID
+        
+        auth:
+          type: string
+          description: Authentication token
+
+    HostGroupGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/HostGroup'
+            - type: string
+              description: Count result when countOutput is used
+        id:
+          type: integer
+
+    HostGroup:
+      type: object
+      properties:
+        groupid:
+          type: string
+          description: ID of the host group
+        name:
+          type: string
+          description: Name of the host group
+        flags:
+          type: string
+          enum: ["0", "4"]
+          description: Origin of the host group (0-plain host group, 4-discovered host group)
+        internal:
+          type: string
+          enum: ["0", "1"]
+          description: Whether the host group is used internally by the system (0-no, 1-yes)
+        uuid:
+          type: string
+          description: UUID of the host group
+        discoveryRule:
+          $ref: '#/components/schemas/DiscoveryRule'
+        groupDiscovery:
+          $ref: '#/components/schemas/GroupDiscovery'
+        hosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Host'
+          description: Hosts that belong to the host group
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+          description: Templates that belong to the host group
+
+    DiscoveryRule:
+      type: object
+      properties:
+        itemid:
+          type: string
+          description: ID of the LLD rule
+        key_:
+          type: string
+          description: Key of the LLD rule
+        hostid:
+          type: string
+          description: ID of the host that the LLD rule belongs to
+        name:
+          type: string
+          description: Name of the LLD rule
+        type:
+          type: string
+          description: Type of the LLD rule
+        delay:
+          type: string
+          description: Update interval of the LLD rule
+
+    GroupDiscovery:
+      type: object
+      properties:
+        groupid:
+          type: string
+          description: ID of the host group
+        parent_group_prototypeid:
+          type: string
+          description: ID of the group prototype that the host group has been created from
+        name:
+          type: string
+          description: Name of the host group prototype
+        lastcheck:
+          type: string
+          description: Time when the host group was last discovered
+        ts_delete:
+          type: string
+          description: Time when the host group will be deleted
+
+    Host:
+      type: object
+      properties:
+        hostid:
+          type: string
+          description: ID of the host
+        host:
+          type: string
+          description: Technical name of the host
+        name:
+          type: string
+          description: Visible name of the host
+        status:
+          type: string
+          enum: ["0", "1"]
+          description: Status of the host (0-monitored host, 1-unmonitored host)
+
+    Template:
+      type: object
+      properties:
+        templateid:
+          type: string
+          description: ID of the template
+        host:
+          type: string
+          description: Technical name of the template
+        name:
+          type: string
+          description: Visible name of the template
+
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error information
+        id:
+          type: integer
