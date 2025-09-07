@@ -1,0 +1,363 @@
+openapi: 3.0.3
+info:
+  title: Zabbix 6.0 API - drule.get
+  version: 6.0.0
+  description: |
+    Retrieve discovery rules based on specified parameters.
+    
+    This method allows you to retrieve discovery rules according to the given parameters.
+    The method is available to all user types. Permissions to the method can be revoked in user role settings.
+    
+    Official documentation: https://www.zabbix.com/documentation/6.0/en/manual/api/reference/drule/get
+servers:
+  - url: http://your-zabbix-server/api_jsonrpc.php
+    description: Zabbix JSON-RPC API endpoint
+paths:
+  /:
+    post:
+      summary: Retrieve discovery rules
+      operationId: druleGet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DruleGetRequest'
+            examples:
+              basic:
+                summary: Get all discovery rules with basic output
+                value:
+                  jsonrpc: "2.0"
+                  method: "drule.get"
+                  params:
+                    output: "extend"
+                  id: 1
+                  auth: "auth_token_here"
+              with_checks:
+                summary: Get discovery rules with associated discovery checks
+                value:
+                  jsonrpc: "2.0"
+                  method: "drule.get"
+                  params:
+                    output: "extend"
+                    selectDChecks: "extend"
+                  id: 2
+                  auth: "auth_token_here"
+              filtered:
+                summary: Get specific discovery rules by IDs
+                value:
+                  jsonrpc: "2.0"
+                  method: "drule.get"
+                  params:
+                    output: ["druleid", "name", "iprange", "delay"]
+                    druleids: ["1", "2"]
+                  id: 3
+                  auth: "auth_token_here"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DruleGetResponse'
+              examples:
+                basic_response:
+                  summary: Discovery rules retrieved successfully
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - druleid: "1"
+                        name: "Local network"
+                        iprange: "192.168.1.1-255"
+                        delay: "1h"
+                        status: "0"
+                        nextcheck: "1425109800"
+                      - druleid: "2"
+                        name: "DMZ network"
+                        iprange: "10.1.1.1-254"
+                        delay: "30m"
+                        status: "1"
+                        nextcheck: "1425111600"
+                    id: 1
+                with_checks_response:
+                  summary: Discovery rules with discovery checks
+                  value:
+                    jsonrpc: "2.0"
+                    result:
+                      - druleid: "1"
+                        name: "Local network"
+                        iprange: "192.168.1.1-255"
+                        delay: "1h"
+                        status: "0"
+                        nextcheck: "1425109800"
+                        dchecks:
+                          - dcheckid: "1"
+                            type: "9"
+                            key_: "system.uname"
+                            ports: "10050"
+                            snmp_community: ""
+                            snmpv3_securityname: ""
+                            snmpv3_securitylevel: "0"
+                            snmpv3_authpassphrase: ""
+                            snmpv3_privpassphrase: ""
+                            uniq: "0"
+                            host_source: "1"
+                            name_source: "0"
+                    id: 2
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    DruleGetRequest:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - params
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        method:
+          type: string
+          enum: ["drule.get"]
+        params:
+          type: object
+          properties:
+            dhostids:
+              description: Return only discovery rules that have created the given discovered hosts
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+            druleids:
+              description: Return only discovery rules with the given IDs
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+            dserviceids:
+              description: Return only discovery rules that have created the given discovered services
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+            output:
+              description: Object properties to be returned
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["druleid", "proxy_hostid", "name", "iprange", "delay", "nextcheck", "status"]
+            countOutput:
+              type: boolean
+              description: Return the number of records in the result instead of the actual data
+            editable:
+              type: boolean
+              description: Return only discovery rules that the user has write permissions for
+            excludeSearch:
+              type: boolean
+              description: Return results that do not match the criteria given in the search parameter
+            filter:
+              type: object
+              description: Return only those results that exactly match the given filter
+              additionalProperties: true
+            limit:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned
+            search:
+              type: object
+              description: Return results that match the given wildcard search
+              additionalProperties: true
+            searchByAny:
+              type: boolean
+              description: Use OR condition for searching instead of AND
+            searchWildcardsEnabled:
+              type: boolean
+              description: Enable the use of wildcards in search
+            sortfield:
+              description: Sort the result by the given properties
+              oneOf:
+                - type: string
+                  enum: ["druleid", "name"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["druleid", "name"]
+            sortorder:
+              description: Sort order
+              oneOf:
+                - type: string
+                  enum: ["ASC", "DESC"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["ASC", "DESC"]
+            startSearch:
+              type: boolean
+              description: The search parameter will compare the beginning of fields
+            selectDChecks:
+              description: Return the discovery checks used by the discovery rule
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["dcheckid", "type", "key_", "ports", "snmp_community", "snmpv3_securityname", "snmpv3_securitylevel", "snmpv3_authpassphrase", "snmpv3_privpassphrase", "uniq", "host_source", "name_source"]
+            selectDHosts:
+              description: Return the discovered hosts created by the discovery rule
+              oneOf:
+                - type: string
+                  enum: ["extend", "count"]
+                - type: array
+                  items:
+                    type: string
+                    enum: ["dhostid", "druleid", "status", "lastdown", "lastup"]
+            limitSelects:
+              type: integer
+              minimum: 1
+              description: Limit the number of records returned by subselects
+        id:
+          type: integer
+        auth:
+          type: string
+          description: Authentication token
+    DruleGetResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        result:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/DiscoveryRule'
+            - type: integer
+              description: Number of discovery rules (when countOutput is true)
+        id:
+          type: integer
+    DiscoveryRule:
+      type: object
+      properties:
+        druleid:
+          type: string
+          description: ID of the discovery rule
+        proxy_hostid:
+          type: string
+          description: ID of the proxy used by the discovery rule
+        name:
+          type: string
+          description: Name of the discovery rule
+        iprange:
+          type: string
+          description: IP ranges to check separated by commas
+        delay:
+          type: string
+          description: Execution interval of the discovery rule
+        nextcheck:
+          type: string
+          description: Time when the discovery rule will be executed next
+        status:
+          type: string
+          description: Whether the discovery rule is enabled
+          enum: ["0", "1"]
+        dchecks:
+          type: array
+          description: Discovery checks used by the rule (if selectDChecks is used)
+          items:
+            $ref: '#/components/schemas/DiscoveryCheck'
+        dhosts:
+          type: array
+          description: Discovered hosts created by the rule (if selectDHosts is used)
+          items:
+            $ref: '#/components/schemas/DiscoveredHost'
+    DiscoveryCheck:
+      type: object
+      properties:
+        dcheckid:
+          type: string
+          description: ID of the discovery check
+        type:
+          type: string
+          description: Type of discovery check
+        key_:
+          type: string
+          description: Key for Zabbix agent checks
+        ports:
+          type: string
+          description: One or several port ranges to check separated by commas
+        snmp_community:
+          type: string
+          description: SNMP community
+        snmpv3_securityname:
+          type: string
+          description: SNMPv3 security name
+        snmpv3_securitylevel:
+          type: string
+          description: SNMPv3 security level
+        snmpv3_authpassphrase:
+          type: string
+          description: SNMPv3 authentication passphrase
+        snmpv3_privpassphrase:
+          type: string
+          description: SNMPv3 privacy passphrase
+        uniq:
+          type: string
+          description: Whether to use this check as a device uniqueness criteria
+        host_source:
+          type: string
+          description: Source for host name
+        name_source:
+          type: string
+          description: Source for visible name
+    DiscoveredHost:
+      type: object
+      properties:
+        dhostid:
+          type: string
+          description: ID of the discovered host
+        druleid:
+          type: string
+          description: ID of the discovery rule that created the discovered host
+        status:
+          type: string
+          description: Status of the discovered host
+        lastdown:
+          type: string
+          description: Time when the discovered host last became unavailable
+        lastup:
+          type: string
+          description: Time when the discovered host last became available
+    ErrorResponse:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            message:
+              type: string
+              description: Error message
+            data:
+              type: string
+              description: Additional error data
+        id:
+          type: integer
